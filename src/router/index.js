@@ -68,6 +68,36 @@ const routes = [
     meta: {
       requireAuth: true // 需要验证登录状态
     }
+  },
+  {
+    path: '/backend',
+    name: 'Backend',
+    component: () => import('../views/backend/Index.vue'),
+    redirect: '/backend/user',
+    meta: {
+      requireAuth: true, // 需要验证登录状态,
+      isAdmin: true
+    },
+    children: [
+      {
+        path: 'user',
+        name: 'User',
+        component: () => import('../views/backend/user/Index.vue'),
+        meta: {
+          requireAuth: true, // 需要验证登录状态,
+          isAdmin: true
+        }
+      },
+      {
+        path: 'order',
+        name: 'BackendOrder',
+        component: () => import('../views/backend/order/Index.vue'),
+        meta: {
+          requireAuth: true, // 需要验证登录状态,
+          isAdmin: true
+        }
+      }
+    ]
   }
 ]
 

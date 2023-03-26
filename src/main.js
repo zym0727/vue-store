@@ -58,6 +58,11 @@ Axios.interceptors.response.use(
 // 全局拦截器,在进入需要用户权限的页面前校验是否已经登录
 router.beforeResolve((to, from, next) => {
   const loginUser = store.state.user.user;
+  // 非管理员拦截
+  if (to.meta.isAdmin && !(loginUser && loginUser.isAdmin)) {
+    next("/");
+    return;
+  }
   // 判断路由是否设置相应校验用户权限
   if (to.meta.requireAuth) {
     if (!loginUser) {

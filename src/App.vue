@@ -34,6 +34,9 @@
             <li>
               <router-link to="/collect">我的收藏</router-link>
             </li>
+            <li v-if="getUser.isAdmin">
+              <router-link to="/backend">后台管理</router-link>
+            </li>
             <li :class="getNum > 0 ? 'shopCart-full' : 'shopCart'">
               <router-link to="/shoppingCart">
                 <i class="el-icon-shopping-cart-full"></i> 购物车
@@ -110,7 +113,7 @@
               <span>|</span>
               <router-link to="/about">关于我们</router-link>
             </p>
-            <p class="coty">商城版权所有 &copy; 2012-2021</p>
+            <p class="coty">商城版权所有 &copy; 2012-2023</p>
           </div>
         </div>
       </el-footer>

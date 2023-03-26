@@ -25,4 +25,11 @@ exports.install = function (Vue) {
       offset: 100
     });
   };
+  Vue.prototype.$confirmTip =  function(tip) {
+    return this.$confirm(tip,  '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+  }
 }

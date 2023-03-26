@@ -156,6 +156,7 @@ export default {
                 this.isRegister = false;
                 // 弹出通知框提示注册成功信息
                 this.notifySucceed(res.data.msg);
+                this.login()
               } else {
                 // 弹出通知框提示注册失败信息
                 this.notifyError(res.data.msg);
@@ -168,6 +169,31 @@ export default {
           return false;
         }
       });
+    },
+    login() {
+      this.$axios
+          .post("/api/users/login", {
+            userName: this.RegisterUser.name,
+            password: this.RegisterUser.pass
+          })
+          .then(res => {
+            // “001”代表登录成功，其他的均为失败
+            if (res.data.code === "001") {
+              // 登录信息存到本地
+              let user = JSON.stringify(res.data.user);
+              localStorage.setItem("user", user);
+              // 登录信息存到vuex
+              this.$store.commit('setUser', res.data.user);
+              // // 弹出通知框提示登录成功信息
+              // this.notifySucceed(res.data.msg);
+            } else {
+              // 弹出通知框提示登录失败信息
+              this.notifyError(res.data.msg);
+            }
+          })
+          .catch(err => {
+            return Promise.reject(err);
+          });
     }
   }
 };
