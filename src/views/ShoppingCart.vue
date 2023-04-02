@@ -59,7 +59,7 @@
               :value="item.num"
               @change="handleChange($event,index,item.productID)"
               :min="1"
-              :max="item.maxNum"
+              :max="100"
             ></el-input-number>
           </div>
           <div class="pro-total pro-total-in">{{item.price*item.num}}元</div>

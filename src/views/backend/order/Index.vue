@@ -39,8 +39,13 @@
       <template #price="{price}">
         {{  Number(price.toFixed(2))}}
       </template>
+        <template #order_status="{order_status}">
+            <span :class="order_status === 0 ? 'unSend': 'send'">●</span>
+            {{  order_status === 0 ? '未发货' : '已发货'}}
+        </template>
       <template #operate="row">
         <el-button type="text" @click="editOrder(row)">编辑</el-button>
+        <el-button type="text" @click="seeDetail(row)">详情</el-button>
         <el-button type="text" @click="deleteOrder(row)">删除</el-button>
       </template>
     </my-table-page>
@@ -53,7 +58,7 @@
         :modal="false"
         center>
       <div>
-        <el-form ref="orderForm" :model="formModel" :rules="rules" label-position="left" label-width="100px">
+        <el-form ref="orderForm" :model="formModel" :rules="rules" label-position="right" label-width="100px">
           <el-form-item v-if="action === '修改'" prop="order_id" label="订单编号">
             <el-input v-model.trim="formModel.order_id" disabled/>
           </el-form-item>
@@ -81,6 +86,12 @@
               <i v-if="index === formModel.productsDetail.length -1" class="el-icon-circle-plus add-icon" @click="addProduct"/>
             </div>
           </el-form-item>
+          <el-form-item prop="order_status" label="发货状态">
+              <el-select v-model="formModel.order_status" filterable placeholder="请选择">
+                  <el-option label="未发货" :value="0"/>
+                  <el-option label="已发货" :value="1"/>
+              </el-select>
+          </el-form-item>
           <el-form-item prop="order_time" label="购买时间">
             <el-date-picker
                 v-model="formModel.order_time"
@@ -95,27 +106,67 @@
         <el-button type="primary" @click="confirm">确 定</el-button>
       </span>
     </el-dialog>
+
+      <el-drawer
+        title="订单详情"
+        :modal="false"
+        :visible.sync="drawVisible">
+          <div class="order-detail-container">
+              <div class="detail-line">
+                  <span>订单编号：</span>
+                  <span>{{detailData.order_id || '-'}}</span>
+              </div>
+              <div class="detail-line">
+                  <span>用户姓名：</span>
+                  <span>{{detailData.userName || '-'}}</span>
+              </div>
+              <div class="detail-line">
+                  <span>购买商品详情：</span>
+                  <span>
+                       <div v-for="({name, num, price}) in detailData.productsDetail" :key="name" class="detail-product-line">
+                          <span>
+                            <el-tag type="info">{{ name }}</el-tag>
+                            <el-tag type="success" style="margin-left: 20px">{{ num }} 个</el-tag>
+                            <el-tag type="warning"  style="margin-left: 20px">{{price}} 元/个</el-tag>
+                          </span>
+                        </div>
+                  </span>
+              </div>
+              <div class="detail-line">
+                  <span>总价：</span>
+                  <span>{{detailData.price || '-'}}</span>
+              </div>
+              <div class="detail-line">
+                  <span>发货状态：</span>
+                  <span>{{detailData.order_status === 0 ? '未发货' : '已发货'}}</span>
+              </div>
+              <div class="detail-line">
+                  <span>购买时间：</span>
+                  <span>{{detailData.order_time || '-'}}</span>
+              </div>
+              <div class="detail-line">
+                  <span>收货人手机号码：</span>
+                  <span>{{detailData.userPhoneNumber || '-'}}</span>
+              </div>
+              <div class="detail-line">
+                  <span>收货人具体地址：</span>
+                  <span>{{detailData.address || '-'}}</span>
+              </div>
+              <div class="detail-line">
+                  <span>配送方式：</span>
+                  <span>包邮</span>
+              </div>
+              <div class="detail-line">
+                  <span>发票：</span>
+                  <span>电子发票</span>
+              </div>
+          </div>
+      </el-drawer>
   </div>
 </template>
 
 <script>
 import MyTablePage from "@/components/MyTablePage.vue";
-
-export const validateUserId = (rule, value, callback) => {
-  if (value) {
-    return callback();
-  } else {
-    return callback(new Error("请选择用户"));
-  }
-};
-
-export const validateOrderTime = (rule, value, callback) => {
-  if (value) {
-    return callback();
-  } else {
-    return callback(new Error("请选择购买时间"));
-  }
-};
 
 export default {
   name: "BackendOrder",
@@ -129,6 +180,7 @@ export default {
         {prop: 'userName', label: '用户姓名', 'min-width': '100px'},
         {prop: 'productsDetail', label: '购买商品详情', 'min-width': '300px'},
         {prop: 'price', label: '总价', 'min-width': '100px'},
+        {prop: 'order_status', label: '发货状态', 'min-width': '100px'},
         {prop: 'order_time', label: '购买时间', 'min-width': '100px'},
         {prop: 'operate', label: '操作', width: '200px'}
       ],
@@ -143,6 +195,7 @@ export default {
         order_id: '',
         orderUserId: '',
         productsDetail: [{key: 0}],
+        order_status: 0,
         order_time: '',
       },
       dialogVisible: false,
@@ -150,10 +203,12 @@ export default {
       users: [],
       products: [],
       rules: {
-        orderUserId: [{ validator: validateUserId, trigger: "change" }],
-        order_time: [{ validator: validateOrderTime, trigger: "change" }],
+        orderUserId: [{required: true, message: '请选择用户', trigger: "change"}],
+        order_time: [{required: true, message: '请选择购买时间', trigger: "change"}]
       },
-      key: 9
+      key: 9,
+     detailData: {},
+     drawVisible: false
     }
   },
   created() {
@@ -178,12 +233,12 @@ export default {
       })
     },
     getUsers() {
-      this.$axios.get('/api/users/all').then(res => {
+      this.$axios.get('/api/user/getNoPagedUsers').then(res => {
         this.users = res.data.result
       })
     },
     getProducts() {
-      this.$axios.get('/api/product/all').then(res => {
+      this.$axios.get('/api/user/product/getNoPagedProducts').then(res => {
         this.products = res.data.result
       })
     },
@@ -201,6 +256,13 @@ export default {
         this.formModel.productsDetail = [...this.formModel.productsDetail]
       })
     },
+    seeDetail(row) {
+      this.drawVisible = true
+      this.detailData = row
+      this.$axios.post('/api/user/getUserById', {user_id: row.orderUserId}).then(res => {
+          this.detailData = {...row, ...res.data.user}
+      })
+    },
     resetForm() {
       const form = this.$refs.orderForm
       form && form.resetFields()
@@ -214,10 +276,11 @@ export default {
     confirm() {
      this.$refs.orderForm.validate(valid => {
        if(valid) {
-         const {order_id, orderUserId, productsDetail, order_time} = this.formModel
+         const {order_id, orderUserId, productsDetail, order_status, order_time} = this.formModel
          const data = {
            user_id: this.$store.getters.getUser.user_id,
            orderUserId,
+           order_status,
            order_time: new Date(order_time).getTime()
          }
          data.products = productsDetail.filter(item => item.productID !==undefined && item.num !==undefined && item.price !==undefined).slice()
@@ -271,6 +334,16 @@ export default {
 .add-order-dialog .el-form-item__label {
   font-weight: 700;
 }
+
+.unSend {
+    margin-right: 8px;
+    color: #E65D6E;
+}
+
+.send {
+    margin-right: 8px;
+    color: #67c23a;
+}
 </style>
 
 <style scoped>
@@ -291,5 +364,25 @@ export default {
   color: #1ab91d;
   align-self: center;
   font-size: 16px;
+}
+
+.order-detail-container {
+    padding: 0 50px 20px 20px;
+}
+
+.order-detail-container .detail-line {
+    display: flex;
+    line-height: 60px;
+    font-size: 18px;
+}
+
+.order-detail-container .detail-line >span:first-child {
+    width: 200px;
+    font-weight: 700;
+    margin-right: 50px;
+}
+
+.order-detail-container .detail-line .detail-product-line {
+    display: flex;
 }
 </style>

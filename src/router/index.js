@@ -96,6 +96,15 @@ const routes = [
           requireAuth: true, // 需要验证登录状态,
           isAdmin: true
         }
+      },
+      {
+        path: 'product',
+        name: 'BackendProduct',
+        component: () => import('../views/backend/product/Index.vue'),
+        meta: {
+          requireAuth: true, // 需要验证登录状态,
+          isAdmin: true
+        }
       }
     ]
   }

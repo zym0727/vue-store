@@ -19,57 +19,72 @@
     <!-- 我的订单头部END -->
 
     <!-- 我的订单主要内容 -->
-    <div class="order-content" v-if="orders.length>0">
-      <div class="content" v-for="(item,index) in orders" :key="index">
-        <ul>
-          <!-- 我的订单表头 -->
-          <li class="order-info">
-            <div class="order-id">订单编号: {{item[0].order_id}}</div>
-            <div class="order-time">订单时间: {{item[0].order_time | dateFormat}}</div>
-          </li>
-          <li class="header">
-            <div class="pro-img"></div>
-            <div class="pro-name">商品名称</div>
-            <div class="pro-price">单价</div>
-            <div class="pro-num">数量</div>
-            <div class="pro-total">小计</div>
-          </li>
-          <!-- 我的订单表头END -->
+    <div class="order-content" v-if="originOrders.length > 0">
+      <div class="radio-group-line">
+          <el-radio-group v-model="status">
+              <el-radio label="">全部</el-radio>
+              <el-radio :label="0">未发货</el-radio>
+              <el-radio :label="1">已发货</el-radio>
+          </el-radio-group>
+      </div>
+      <template v-if="orders.length > 0">
+          <div class="content" v-for="(item,index) in orders" :key="index">
+              <ul>
+                  <!-- 我的订单表头 -->
+                  <li class="order-info">
+                      <div class="order-id">订单编号: {{item[0].order_id}}</div>
+                      <el-tag :type="item[0].order_status ? 'success' : 'warning'" class="order-status">{{ item[0].order_status ? '已发货' : '未发货' }}</el-tag>
+                      <div class="order-time">订单时间: {{item[0].order_time | dateFormat}}</div>
+                  </li>
+                  <li class="header">
+                      <div class="pro-img"></div>
+                      <div class="pro-name">商品名称</div>
+                      <div class="pro-price">单价</div>
+                      <div class="pro-num">数量</div>
+                      <div class="pro-total">小计</div>
+                  </li>
+                  <!-- 我的订单表头END -->
 
-          <!-- 订单列表 -->
-          <li class="product-list" v-for="(product,i) in item" :key="i">
-            <div class="pro-img">
-              <router-link :to="{ path: '/goods/details', query: {productID:product.product_id} }">
-                <img :src="$target + product.product_picture" />
-              </router-link>
-            </div>
-            <div class="pro-name">
-              <router-link
-                :to="{ path: '/goods/details', query: {productID:product.product_id} }"
-              >{{product.product_name}}</router-link>
-            </div>
-            <div class="pro-price">{{product.product_price}}元</div>
-            <div class="pro-num">{{product.product_num}}</div>
-            <div class="pro-total pro-total-in">{{product.product_price*product.product_num}}元</div>
-          </li>
-        </ul>
-        <div class="order-bar">
-          <div class="order-bar-left">
+                  <!-- 订单列表 -->
+                  <li class="product-list" v-for="(product,i) in item" :key="i">
+                      <div class="pro-img">
+                          <router-link :to="{ path: '/goods/details', query: {productID:product.product_id} }">
+                              <img :src="$target + product.product_picture" />
+                          </router-link>
+                      </div>
+                      <div class="pro-name">
+                          <router-link
+                                  :to="{ path: '/goods/details', query: {productID:product.product_id} }"
+                          >{{product.product_name}}</router-link>
+                      </div>
+                      <div class="pro-price">{{product.product_price}}元</div>
+                      <div class="pro-num">{{product.product_num}}</div>
+                      <div class="pro-total pro-total-in">{{product.product_price*product.product_num}}元</div>
+                  </li>
+              </ul>
+              <div class="order-bar">
+                  <div class="order-bar-left">
             <span class="order-total">
               共
               <span class="order-total-num">{{total[index].totalNum}}</span> 件商品
             </span>
-          </div>
-          <div class="order-bar-right">
+                  </div>
+                  <div class="order-bar-right">
             <span>
               <span class="total-price-title">合计：</span>
               <span class="total-price">{{total[index].totalPrice}}元</span>
             </span>
+                  </div>
+                  <!-- 订单列表END -->
+              </div>
           </div>
-          <!-- 订单列表END -->
+          <div style="margin-top:-40px;"></div>
+      </template>
+        <div v-else class="order-empty">
+            <div class="empty">
+                <p class="other-status">没有当前状态下的订单哦</p>
+            </div>
         </div>
-      </div>
-      <div style="margin-top:-40px;"></div>
     </div>
     <!-- 我的订单主要内容END -->
 
@@ -87,8 +102,9 @@
 export default {
   data() {
     return {
-      orders: [], // 订单列表
-      total: [] // 每个订单的商品数量及总价列表
+      originOrders: [], // 订单列表
+      total: [], // 每个订单的商品数量及总价列表
+      status: '',
     };
   },
   activated() {
@@ -99,7 +115,7 @@ export default {
       })
       .then(res => {
         if (res.data.code === "001") {
-          this.orders = res.data.orders;
+          this.originOrders = res.data.orders;
         } else {
           this.notifyError(res.data.msg);
         }
@@ -107,6 +123,19 @@ export default {
       .catch(err => {
         return Promise.reject(err);
       });
+  },
+  computed: {
+    orders() {
+        if(this.status === '') {
+            return this.originOrders
+        }
+        return  this.originOrders.filter(item => {
+            if(!item.length){
+                return false
+            }
+            return item[0].order_status === this.status
+        })
+    }
   },
   watch: {
     // 通过订单信息，计算出每个订单的商品数量及总价
@@ -152,6 +181,11 @@ export default {
   font-weight: normal;
   color: #424242;
 }
+.order .radio-group-line {
+    margin: 0 auto 15px;
+    width: 1225px;
+    text-align: right;
+}
 /* 我的订单头部CSS END */
 .order .content {
   width: 1225px;
@@ -177,6 +211,11 @@ export default {
   float: left;
   color: #ff6700;
 }
+
+.order .content ul .order-info .order-status {
+    margin-left: 25px
+}
+
 .order .content ul .order-info .order-time {
   float: right;
 }
@@ -285,6 +324,9 @@ export default {
 .order .order-empty .empty p {
   margin: 0 0 20px;
   font-size: 20px;
+}
+.order .order-empty .empty .other-status {
+    margin-top: 150px;
 }
 /* 订单为空的时候显示的内容CSS END */
 </style>

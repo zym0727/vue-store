@@ -58,10 +58,10 @@
             <el-input v-model.trim="formModel.userPhoneNumber" placeholder="请输入手机号" maxlength="11"/>
           </el-form-item>
           <el-form-item prop="address" label="地址">
-            <el-input v-model.trim="formModel.address" placeholder="请输入地址" maxlength="50"/>
+            <el-input v-model.trim="formModel.address"  type="textarea" :rows="2" placeholder="请输入" maxlength="50"/>
           </el-form-item>
           <el-form-item prop="isAdmin" label="是否管理员">
-            <el-select v-model="formModel.isAdmin" placeholder="请选择" :clearable="true">
+            <el-select v-model="formModel.isAdmin" placeholder="请选择">
               <el-option :value="1" label="是"/>
               <el-option :value="0" label="否"/>
             </el-select>
@@ -117,13 +117,13 @@ export default {
         password: '',
         userPhoneNumber: '',
         address: '',
-        isAdmin: '',
+        isAdmin: 0,
       },
       dialogVisible: false,
       action: '添加',
       rules: {
-        userName: [{ validator: validateName, trigger: "blur" }],
-        password: [{ validator: validatePass, trigger: "blur" }],
+        userName: [{required: true, message: '请输入用户姓名', trigger: "blur"}, { validator: validateName, trigger: "blur" }],
+        password: [{required: true, message: '请输入用户密码', trigger: "blur"}, { validator: validatePass, trigger: "blur" }],
         userPhoneNumber: [{ validator: validatePhone, trigger: "blur" }]
       }
     }
@@ -140,7 +140,7 @@ export default {
     doSearch() {
       this.loading = true
       const params = {pageNo: this.currentPage, pageSize: this.pageSize, ...this.searchModel}
-      this.$axios.get('/api/users/queryUserList', { params }).then(res => {
+      this.$axios.get('/api/user/queryUserList', { params }).then(res => {
         this.tableData = res.data.result
         this.total = res.data.total
       }).finally(() => {
@@ -166,7 +166,7 @@ export default {
     },
     deleteUser({userName, user_id}) {
       this.$confirmTip(`确认删除用户 ${userName} ?`).then(() => {
-        this.$axios.post('/api/users/deleteUser', { user_id }).then(this.commonHandle)
+        this.$axios.post('/api/user/deleteUser', { user_id }).then(this.commonHandle)
       }).catch(() => {})
     },
     confirm() {
@@ -174,9 +174,9 @@ export default {
         if(valid) {
           const data = {...this.formModel}
           if(this.action === '添加') {
-            this.$axios.post('/api/users/addUser', data).then(this.commonHandle)
+            this.$axios.post('/api/user/addUser', data).then(this.commonHandle)
           } else {
-            this.$axios.post('/api/users/updateUser', data).then(this.commonHandle)
+            this.$axios.post('/api/user/updateUser', data).then(this.commonHandle)
           }
         }
       })

@@ -37,9 +37,11 @@ Axios.interceptors.response.use(
     if (res.data.code === "401") {
       // 401表示没有登录
       // 提示没有登录
+      router.push({ path: "/" });
       Vue.prototype.notifyError(res.data.msg);
       // 修改vuex的showLogin状态,显示登录组件
       store.dispatch("setShowLogin", true);
+      store.commit('setUser', '')
     }
     if (res.data.code === "500") {
       // 500表示服务器异常

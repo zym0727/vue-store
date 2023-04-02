@@ -9,7 +9,7 @@ export default {
   state: {
     shoppingCart: []
     // shoppingCart结构
-    /* 
+    /*
     shoppingCart = {
       id: "", // 购物车id
       productID: "", // 商品id
@@ -17,7 +17,6 @@ export default {
       productImg: "", // 商品图片
       price: "", // 商品价格
       num: "", // 商品数量
-      maxNum: "", // 商品限购数量
       check: false // 是否勾选
     } */
   },
@@ -98,10 +97,6 @@ export default {
       // 可更新商品数量和是否勾选
       // 用于购物车点击勾选及加减商品数量
       if (payload.prop == "num") {
-        // 判断效果的商品数量是否大于限购数量或小于1
-        if (state.shoppingCart[payload.key].maxNum < payload.val) {
-          return;
-        }
         if (payload.val < 1) {
           return;
         }
@@ -115,9 +110,7 @@ export default {
       for (let i = 0; i < state.shoppingCart.length; i++) {
         const temp = state.shoppingCart[i];
         if (temp.productID == productID) {
-          if (temp.num < temp.maxNum) {
-            temp.num++;
-          }
+          temp.num++;
         }
       }
     },

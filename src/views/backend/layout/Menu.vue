@@ -11,12 +11,16 @@
         style="border: 0"
         active-text-color="#ffd04b">
       <el-menu-item index="/backend/user">
-        <i class="el-icon-menu"></i>
+        <i class="el-icon-user"></i>
         <span slot="title">用户管理</span>
       </el-menu-item>
       <el-menu-item index="/backend/order">
-        <i class="el-icon-setting"></i>
+        <i class="el-icon-mobile"></i>
         <span slot="title">订单管理</span>
+      </el-menu-item>
+      <el-menu-item index="/backend/product">
+        <i class="el-icon-potato-strips"></i>
+        <span slot="title">商品管理</span>
       </el-menu-item>
     </el-menu>
   </div>

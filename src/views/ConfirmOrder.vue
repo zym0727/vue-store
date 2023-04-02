@@ -23,30 +23,24 @@
     <div class="content">
       <!-- 选择地址 -->
       <div class="section-address">
-        <p class="title">收货地址</p>
+        <p class="title">收货信息</p>
         <div class="address-body">
-          <ul>
-            <li
-              :class="item.id == confirmAddress ? 'in-section' : ''"
-              v-for="item in address"
-              :key="item.id"
-            >
-              <h2>{{item.name}}</h2>
-              <p class="phone">{{item.phone}}</p>
-              <p class="address">{{item.address}}</p>
-            </li>
-            <li class="add-address">
-              <i class="el-icon-circle-plus-outline"></i>
-              <p>添加新地址</p>
-            </li>
-          </ul>
+          <el-form ref="addressForm" :model="formModel" :inline="true" :rules="rules">
+            <el-form-item label="手机号码：" prop="userPhoneNumber">
+                <el-input v-model.trim="formModel.userPhoneNumber" style="width: 200px" maxlength="11"></el-input>
+            </el-form-item>
+            <br/>
+            <el-form-item label="具体地址："  prop="address">
+                <el-input v-model.trim="formModel.address" style="width: 800px"></el-input>
+            </el-form-item>
+          </el-form>
         </div>
       </div>
       <!-- 选择地址END -->
 
       <!-- 商品及优惠券 -->
       <div class="section-goods">
-        <p class="title">商品及优惠券</p>
+        <p class="title">商品</p>
         <div class="goods-list">
           <ul>
             <li v-for="item in getCheckGoods" :key="item.id">
@@ -72,8 +66,6 @@
       <div class="section-invoice">
         <p class="title">发票</p>
         <p class="invoice">电子发票</p>
-        <p class="invoice">个人</p>
-        <p class="invoice">商品明细</p>
       </div>
       <!-- 发票END -->
 
@@ -126,72 +118,92 @@
 </template>
 <script>
 import { mapGetters } from "vuex";
-import { mapActions } from "vuex";
+import { mapActions } from "vuex"
+
+export const validatePhone = (rule, value, callback) => {
+    if(!value){
+        return callback(new Error("请输入手机号码"));
+    } else if (/^1\d{10}$/.test(value)) {
+        return callback();
+    } else {
+        return callback(new Error("手机号为11位数字"));
+    }
+}
+
+export const validateAddress = (rule, value, callback) => {
+    if(value){
+        return callback();
+    } else {
+        return callback(new Error("请输入地址"));
+    }
+}
+
 export default {
   name: "",
   data() {
     return {
-      // 虚拟数据
-      confirmAddress: 1, // 选择的地址id
-      // 地址列表
-      address: [
-        {
-          id: 1,
-          name: "陈同学",
-          phone: "100861001010000",
-          address: "广东 广州市 白云区 ***"
+        formModel: {
+            userPhoneNumber: '',
+            address: ''
         },
-        {
-          id: 2,
-          name: "陈同学",
-          phone: "100861001010000",
-          address: "广东 广州市 白云区 ***"
+        rules: {
+            userPhoneNumber: [{ validator: validatePhone, trigger: "blur" }],
+            address: [{ validator: validateAddress, trigger: "blur" }],
         }
-      ]
     };
   },
-  created() {
+  activated() {
     // 如果没有勾选购物车商品直接进入确认订单页面,提示信息并返回购物车
     if (this.getCheckNum < 1) {
       this.notifyError("请勾选商品后再结算");
       this.$router.push({ path: "/shoppingCart" });
     }
+    this.formModel = {
+        userPhoneNumber: this.getUser.userPhoneNumber,
+        address: this.getUser.address
+    }
   },
   computed: {
     // 结算的商品数量; 结算商品总计; 结算商品信息
-    ...mapGetters(["getCheckNum", "getTotalPrice", "getCheckGoods"])
+    ...mapGetters(["getCheckNum", "getTotalPrice", "getCheckGoods", "getUser"])
   },
   methods: {
-    ...mapActions(["deleteShoppingCart"]),
+    ...mapActions(["deleteShoppingCart", "setUser"]),
     addOrder() {
-      this.$axios
-        .post("/api/user/order/addOrder", {
-          user_id: this.$store.getters.getUser.user_id,
-          products: this.getCheckGoods
-        })
-        .then(res => {
-          let products = this.getCheckGoods;
-          switch (res.data.code) {
-            // “001”代表结算成功
-            case "001":
-              for (let i = 0; i < products.length; i++) {
-                const temp = products[i];
-                // 删除已经结算的购物车商品
-                this.deleteShoppingCart(temp.id);
-              }
-              // 提示结算结果
-              this.notifySucceed(res.data.msg);
-              // 跳转我的订单页面
-              this.$router.push({ path: "/order" });
-              break;
-            default:
-              // 提示失败信息
-              this.notifyError(res.data.msg);
-          }
-        })
-        .catch(err => {
-          return Promise.reject(err);
-        });
+     this.$refs.addressForm.validate(valid => {
+         if(valid) {
+             const {userPhoneNumber, address} = this.formModel
+             this.$axios
+                 .post("/api/user/order/addOrder", {
+                     user_id: this.getUser.user_id,
+                     products: this.getCheckGoods,
+                     userPhoneNumber,
+                     address
+                 })
+                 .then(res => {
+                     let products = this.getCheckGoods;
+                     switch (res.data.code) {
+                         // “001”代表结算成功
+                         case "001":
+                             for (let i = 0; i < products.length; i++) {
+                                 const temp = products[i];
+                                 // 删除已经结算的购物车商品
+                                 this.deleteShoppingCart(temp.id);
+                             }
+                             this.setUser({...this.getUser, userPhoneNumber, address})
+                             // 提示结算结果
+                             this.notifySucceed(res.data.msg);
+                             // 跳转我的订单页面
+                             this.$router.push({ path: "/order" });
+                             break;
+                         default:
+                             // 提示失败信息
+                             this.notifyError(res.data.msg);
+                     }
+                 })
+                 .catch(() => {});
+         }
+     })
     }
   }
 };
