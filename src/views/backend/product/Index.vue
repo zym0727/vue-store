@@ -80,9 +80,9 @@
                 <el-form-item prop="product_selling_price" label="商品降价价格">
                     <el-input v-model.trim="formModel.product_selling_price" placeholder="请输入商品降价价格" style="width: 400px"/>
                 </el-form-item>
-                <el-form-item prop="product_sales" label="商品销量">
-                    <el-input v-model.trim="formModel.product_sales" placeholder="请输入商品销量" style="width: 400px"/>
-                </el-form-item>
+<!--                <el-form-item prop="product_sales" label="商品销量">-->
+<!--                    <el-input v-model.trim="formModel.product_sales" placeholder="请输入商品销量" style="width: 400px"/>-->
+<!--                </el-form-item>-->
             </el-form>
             <span slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取 消</el-button>
